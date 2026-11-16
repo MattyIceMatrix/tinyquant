@@ -1,0 +1,103 @@
+{
+  "heap": {
+    "functions_checked": [
+      "tq_forward",
+      "tq_requantize",
+      "tq_argmax_i8"
+    ],
+    "allocator_references": {
+      "tq_forward": [],
+      "tq_requantize": [],
+      "tq_argmax_i8": []
+    },
+    "inference_path_is_allocation_free": true
+  },
+  "stack": {
+    "32": {
+      "tq_forward_bytes": 320,
+      "tqf_forward_bytes": 368,
+      "all_frames": {
+        "read_exact": 16,
+        "tq_requantize": 8,
+        "tq_load": 128,
+        "tqf_load": 112,
+        "tq_forward": 320,
+        "tq_argmax_i8": 8,
+        "tq_predict": 80,
+        "tqf_forward": 368,
+        "tqf_predict": 176
+      }
+    },
+    "64": {
+      "tq_forward_bytes": 512,
+      "tqf_forward_bytes": 624,
+      "all_frames": {
+        "read_exact": 16,
+        "tq_requantize": 8,
+        "tq_load": 128,
+        "tqf_load": 112,
+        "tq_forward": 512,
+        "tq_argmax_i8": 8,
+        "tq_predict": 112,
+        "tqf_forward": 624,
+        "tqf_predict": 304
+      }
+    },
+    "128": {
+      "tq_forward_bytes": 896,
+      "tqf_forward_bytes": 1136,
+      "all_frames": {
+        "read_exact": 16,
+        "tq_requantize": 8,
+        "tq_load": 128,
+        "tqf_load": 112,
+        "tq_forward": 896,
+        "tq_argmax_i8": 8,
+        "tq_predict": 176,
+        "tqf_forward": 1136,
+        "tqf_predict": 560
+      }
+    },
+    "256": {
+      "tq_forward_bytes": 1664,
+      "tqf_forward_bytes": 2160,
+      "all_frames": {
+        "read_exact": 16,
+        "tq_requantize": 8,
+        "tq_load": 128,
+        "tqf_load": 112,
+        "tq_forward": 1664,
+        "tq_argmax_i8": 8,
+        "tq_predict": 304,
+        "tqf_forward": 2160,
+        "tqf_predict": 1072
+      }
+    },
+    "512": {
+      "tq_forward_bytes": 3200,
+      "tqf_forward_bytes": 4208,
+      "all_frames": {
+        "read_exact": 16,
+        "tq_requantize": 8,
+        "tq_load": 128,
+        "tqf_load": 112,
+        "tq_forward": 3200,
+        "tq_argmax_i8": 8,
+        "tq_predict": 560,
+        "tqf_forward": 4208,
+        "tqf_predict": 2096
+      }
+    }
+  },
+  "valgrind": {
+    "exit_code": 0,
+    "errors": 0,
+    "clean": true,
+    "tail": [
+      "==4669== All heap blocks were freed -- no leaks are possible",
+      "==4669== ",
+      "==4669== For lists of detected and suppressed errors, rerun with: -s",
+      "==4669== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)"
+    ]
+  }
+}

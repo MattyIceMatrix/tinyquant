@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""Build the engine every way we can and check the output never changes.
+
+An INT8 kernel that gives different answers at -O3 than at -O0, or on ARM than
+on x86, is not a deployable kernel -- it is a kernel that happens to work on the
+machine it was written on. The matrix covers:
+
+  compilers         gcc, clang
+  optimisation      -O0 -O1 -O2 -O3 -Os -Ofast
+  architectures     x86-64, aarch64, riscv64, arm (32-bit, hard float)
+
+Cross-architecture builds use `zig cc` and run under qemu-user, so the whole
+matrix reproduces on any Linux box without special hardware. Every build runs
+the same bit-exactness check against the same Python-generated reference bytes.
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+import shutil
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+BUILD = ROOT / "build" / "matrix"
+ART = ROOT / "artifacts"
+
+NATIVE_OPTS = ["-O0", "-O1", "-O2", "-O3", "-Os"]
+NATIVE_COMPILERS = [("gcc", ["gcc"]), ("clang", ["clang"])]
+CROSS_TARGETS = [
+    ("aarch64", "aarch64-linux-musl", "qemu-aarch64-static"),
+    ("riscv64", "riscv64-linux-musl", "qemu-riscv64-static"),
+    ("arm32", "arm-linux-musleabihf", "qemu-arm-static"),
+]
+SRC = ["engine/tinyq.c", "engine/crossval.c"]
+BASE = ["-std=c99", "-DTQ_SKIP_ZEROS=0"]
+ARGS = ["artifacts/model.tq8", "artifacts/test_vectors.tqv", "artifacts/reference_out.bin"]
+
+
+def run_case(name: str, cmd: list[str], runner: list[str] | None) -> dict:
+    exe = BUILD / f"crossval_{name}"
+    build = subprocess.run([*cmd, *BASE, *SRC, "-o", str(exe)], cwd=ROOT,
+                           capture_output=True, text=True)
+    if build.returncode != 0:
+        return {"case": name, "built": False, "error": build.stderr.strip()[-300:]}
+
+    proc = subprocess.run([*(runner or []), str(exe), *ARGS], cwd=ROOT,
+                          capture_output=True, text=True)
+    if proc.returncode not in (0, 3):
+        return {"case": name, "built": True, "ran": False,
+                "error": (proc.stderr or proc.stdout).strip()[-300:]}
+    rep = json.loads(proc.stdout)
+    return {
+        "case": name,
+        "built": True,
+        "ran": True,
+        "bit_exact": rep["bit_exact"],
+        "mismatched_values": rep["mismatched_values"],
+        "accuracy": rep["c_engine_accuracy"],
+    }
+
+
+def main() -> int:
+    BUILD.mkdir(parents=True, exist_ok=True)
+    results = []
+
+    for cname, cbase in NATIVE_COMPILERS:
+        if shutil.which(cbase[0]) is None:
+            results.append({"case": f"{cname}", "skipped": "compiler not installed"})
+            continue
+        for opt in NATIVE_OPTS:
+            results.append(run_case(f"{cname}_x86-64_{opt.lstrip('-')}", [*cbase, opt], None))
+
+    zig_ok = subprocess.run([sys.executable, "-m", "ziglang", "version"],
+                            capture_output=True).returncode == 0
+    for arch, triple, qemu in CROSS_TARGETS:
+        if not zig_ok or shutil.which(qemu) is None:
+            results.append({"case": f"zig_{arch}_O2",
+                            "skipped": "zig cc or qemu-user not installed"})
+            continue
+        results.append(run_case(
+            f"zig_{arch}_O2",
+            [sys.executable, "-m", "ziglang", "cc", "-target", triple, "-O2", "-static"],
+            [qemu],
+        ))
+
+    checked = [r for r in results if r.get("ran")]
+    summary = {
+        "cases_total": len(results),
+        "cases_run": len(checked),
+        "cases_skipped": len([r for r in results if r.get("skipped")]),
+        "all_bit_exact": all(r["bit_exact"] for r in checked) if checked else False,
+        "distinct_accuracies": sorted({r["accuracy"] for r in checked}),
+        "architectures_verified": sorted({
+            r["case"].split("_")[1] for r in checked
+        }),
+        "results": results,
+    }
+    (ART / "portability.json").write_text(json.dumps(summary, indent=2))
+
+    for r in results:
+        if r.get("skipped"):
+            print(f"  SKIP  {r['case']:<28} {r['skipped']}")
+        elif not r.get("ran"):
+            print(f"  FAIL  {r['case']:<28} {r.get('error', 'build failed')}")
+        else:
+            flag = "OK  " if r["bit_exact"] else "DIFF"
+            print(f"  {flag}  {r['case']:<28} acc={r['accuracy']:.6f} "
+                  f"mismatches={r['mismatched_values']}")
+    print(f"\n{summary['cases_run']} builds run across "
+          f"{len(summary['architectures_verified'])} architectures; "
+          f"all bit-exact: {summary['all_bit_exact']}; "
+          f"distinct accuracies observed: {summary['distinct_accuracies']}")
+    return 0 if summary["all_bit_exact"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

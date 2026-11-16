@@ -1,0 +1,11 @@
+{
+  "train_acc": 1.0,
+  "test_acc": 0.9861111111111112,
+  "epochs": 300,
+  "lr": 0.08,
+  "batch": 64,
+  "seed": 1337,
+  "params": 6570,
+  "n_train": 1437,
+  "n_test": 360
+}

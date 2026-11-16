@@ -1,0 +1,42 @@
+{
+  "rows": [
+    {
+      "flags": "-O0",
+      "int8_p50_us": 17.909,
+      "fp32_p50_us": 17.624,
+      "speedup_p50": 0.9841
+    },
+    {
+      "flags": "-O2",
+      "int8_p50_us": 3.442,
+      "fp32_p50_us": 3.014,
+      "speedup_p50": 0.8757
+    },
+    {
+      "flags": "-O3",
+      "int8_p50_us": 1.703,
+      "fp32_p50_us": 1.566,
+      "speedup_p50": 0.9196
+    },
+    {
+      "flags": "-Os",
+      "int8_p50_us": 4.867,
+      "fp32_p50_us": 3.2,
+      "speedup_p50": 0.6575
+    },
+    {
+      "flags": "-O3 -march=native",
+      "int8_p50_us": 1.094,
+      "fp32_p50_us": 0.757,
+      "speedup_p50": 0.692
+    },
+    {
+      "flags": "-O3 -fno-tree-vectorize",
+      "int8_p50_us": 3.058,
+      "fp32_p50_us": 3.0,
+      "speedup_p50": 0.981
+    }
+  ],
+  "int8_ever_faster": false,
+  "best_speedup": 0.9841
+}

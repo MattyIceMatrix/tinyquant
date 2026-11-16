@@ -1,0 +1,287 @@
+{
+  "schema": 1,
+  "about": "Every number stated in README.md appears here, bound to the artifact that produced it. tests/test_claims.py re-checks all of them, so a README claim that drifts from the measurements turns CI red. Accuracy and size claims are exact, because the pipeline is deterministic. Timing claims are directional -- an absolute microsecond figure is a property of the machine that ran it, not of this code, so asserting one would be asserting something false on anyone else's hardware.",
+  "claims": [
+    {
+      "id": "model-params",
+      "text": "The reference model has 6,570 parameters.",
+      "artifact": "artifacts/train_meta.json",
+      "query": "params",
+      "op": "==",
+      "expected": 6570
+    },
+    {
+      "id": "fp32-baseline-accuracy",
+      "text": "FP32 baseline accuracy is 98.61% on 360 held-out samples.",
+      "artifact": "artifacts/sweep.json",
+      "query": "fp32_test_acc",
+      "op": "==",
+      "expected": 0.986111,
+      "tol": 1e-06
+    },
+    {
+      "id": "test-set-size",
+      "text": "Accuracy is measured on 360 held-out samples.",
+      "artifact": "artifacts/sweep.json",
+      "query": "n_test",
+      "op": "==",
+      "expected": 360
+    },
+    {
+      "id": "int8-is-lossless",
+      "text": "INT8 per-channel quantization costs 0.00 percentage points of accuracy.",
+      "artifact": "artifacts/sweep.json",
+      "query": "rows[weight_bits=8,granularity=per_channel,calibration=minmax].delta_pp",
+      "op": "==",
+      "expected": 0.0,
+      "tol": 1e-09
+    },
+    {
+      "id": "int8-compression",
+      "text": "The deployed INT8 model is 3.49x smaller than FP32, counting biases and requantization parameters.",
+      "artifact": "artifacts/sweep.json",
+      "query": "rows[weight_bits=8,granularity=per_channel,calibration=minmax].compression_x",
+      "op": "==",
+      "expected": 3.493,
+      "tol": 0.002
+    },
+    {
+      "id": "four-bit-per-channel-is-lossless",
+      "text": "At 4-bit weights, per-channel scaling still costs 0.00pp.",
+      "artifact": "artifacts/sweep.json",
+      "query": "rows[weight_bits=4,granularity=per_channel,calibration=minmax].delta_pp",
+      "op": "==",
+      "expected": 0.0,
+      "tol": 1e-09
+    },
+    {
+      "id": "four-bit-per-tensor-loses-accuracy",
+      "text": "At 4-bit weights, per-tensor scaling loses 0.56pp -- the whole argument for per-channel scales.",
+      "artifact": "artifacts/sweep.json",
+      "query": "rows[weight_bits=4,granularity=per_tensor,calibration=minmax].delta_pp",
+      "op": "==",
+      "expected": -0.5556,
+      "tol": 0.001
+    },
+    {
+      "id": "four-bit-compression",
+      "text": "4-bit weights compress 6.12x versus FP32.",
+      "artifact": "artifacts/sweep.json",
+      "query": "rows[weight_bits=4,granularity=per_channel,calibration=minmax].compression_x",
+      "op": "==",
+      "expected": 6.123,
+      "tol": 0.002
+    },
+    {
+      "id": "two-bit-collapses",
+      "text": "At 2-bit weights accuracy collapses to 70.0% even with per-channel scales.",
+      "artifact": "artifacts/sweep.json",
+      "query": "rows[weight_bits=2,granularity=per_channel,calibration=minmax].test_acc",
+      "op": "==",
+      "expected": 0.7,
+      "tol": 1e-06
+    },
+    {
+      "id": "two-bit-per-tensor-worse-still",
+      "text": "At 2-bit, per-tensor scaling drops to 58.6%.",
+      "artifact": "artifacts/sweep.json",
+      "query": "rows[weight_bits=2,granularity=per_tensor,calibration=minmax].test_acc",
+      "op": "==",
+      "expected": 0.586111,
+      "tol": 1e-06
+    },
+    {
+      "id": "c-engine-bit-exact",
+      "text": "The C engine reproduces the Python reference exactly: 0 differing output values across the test set.",
+      "artifact": "artifacts/crossval.json",
+      "query": "mismatched_values",
+      "op": "==",
+      "expected": 0
+    },
+    {
+      "id": "c-engine-no-argmax-disagreement",
+      "text": "The C engine and the Python reference never disagree on the predicted class.",
+      "artifact": "artifacts/crossval.json",
+      "query": "argmax_disagreements",
+      "op": "==",
+      "expected": 0
+    },
+    {
+      "id": "c-engine-accuracy-matches",
+      "text": "The C engine scores the same 98.61% as the Python reference.",
+      "artifact": "artifacts/crossval.json",
+      "query": "c_engine_accuracy",
+      "op": "==",
+      "expected": 0.986111,
+      "tol": 1e-06
+    },
+    {
+      "id": "int8-is-slower-on-the-real-model",
+      "text": "On the real model, whose weights fit in L1, the INT8 kernel is SLOWER than FP32.",
+      "artifact": "artifacts/latency.json",
+      "query": "speedup_p50",
+      "op": "<",
+      "expected": 1.0
+    },
+    {
+      "id": "int8-slower-when-l1-resident",
+      "text": "In the scaling study, the smallest model (35 KiB of FP32 weights, L1-resident) runs slower in INT8.",
+      "artifact": "artifacts/scaling_study.json",
+      "query": "[width=64].speedup_p50",
+      "op": "<",
+      "expected": 1.0
+    },
+    {
+      "id": "int8-faster-past-l2",
+      "text": "Once FP32 weights exceed the 4 MiB L2 (width 2048, 32 MiB), INT8 is at least 1.25x faster.",
+      "artifact": "artifacts/scaling_study.json",
+      "query": "[width=2048].speedup_p50",
+      "op": ">=",
+      "expected": 1.25
+    },
+    {
+      "id": "crossover-is-monotone-at-the-ends",
+      "text": "The largest model shows a bigger INT8 advantage than the smallest -- the effect tracks memory, not noise.",
+      "artifact": "artifacts/scaling_study.json",
+      "query": "[width=2048].speedup_p50",
+      "op": ">",
+      "expected": 1.0
+    },
+    {
+      "id": "never-faster-at-any-opt-level",
+      "text": "INT8 is not faster than FP32 at any optimisation level tried on this model.",
+      "artifact": "artifacts/opt_levels.json",
+      "query": "int8_ever_faster",
+      "op": "==",
+      "expected": false
+    },
+    {
+      "id": "vectorisation-explains-the-gap",
+      "text": "With vectorisation disabled the two kernels are within 2% -- vectorisation is what hands FP32 the lead.",
+      "artifact": "artifacts/opt_levels.json",
+      "query": "rows[flags=-O3 -fno-tree-vectorize].speedup_p50",
+      "op": ">=",
+      "expected": 0.95
+    },
+    {
+      "id": "all-builds-bit-exact",
+      "text": "Every build in the portability matrix is bit-exact against the same reference bytes.",
+      "artifact": "artifacts/portability.json",
+      "query": "all_bit_exact",
+      "op": "==",
+      "expected": true
+    },
+    {
+      "id": "thirteen-builds",
+      "text": "13 builds are run in the portability matrix.",
+      "artifact": "artifacts/portability.json",
+      "query": "cases_run",
+      "op": ">=",
+      "expected": 13
+    },
+    {
+      "id": "four-architectures",
+      "text": "Four instruction sets are verified: x86-64, aarch64, riscv64, arm32.",
+      "artifact": "artifacts/portability.json",
+      "query": "architectures_verified",
+      "op": "==",
+      "expected": [
+        "aarch64",
+        "arm32",
+        "riscv64",
+        "x86-64"
+      ]
+    },
+    {
+      "id": "one-accuracy-across-all-builds",
+      "text": "All 13 builds produce exactly one distinct accuracy value.",
+      "artifact": "artifacts/portability.json",
+      "query": "distinct_accuracies",
+      "op": "==",
+      "expected": [
+        0.986111
+      ]
+    },
+    {
+      "id": "inference-path-allocation-free",
+      "text": "The inference path references no allocator symbol.",
+      "artifact": "artifacts/resource_audit.json",
+      "query": "heap.inference_path_is_allocation_free",
+      "op": "==",
+      "expected": true
+    },
+    {
+      "id": "valgrind-clean",
+      "text": "Valgrind reports zero errors over the full test set, with leaks treated as errors.",
+      "artifact": "artifacts/resource_audit.json",
+      "query": "valgrind.errors",
+      "op": "==",
+      "expected": 0
+    },
+    {
+      "id": "stack-frame-at-width-32",
+      "text": "At TQ_MAX_WIDTH=32 the tq_forward stack frame is 320 bytes.",
+      "artifact": "artifacts/resource_audit.json",
+      "query": "stack.32.tq_forward_bytes",
+      "op": "==",
+      "expected": 320
+    },
+    {
+      "id": "stack-frame-at-width-512",
+      "text": "At TQ_MAX_WIDTH=512 the tq_forward stack frame is 3,200 bytes.",
+      "artifact": "artifacts/resource_audit.json",
+      "query": "stack.512.tq_forward_bytes",
+      "op": "==",
+      "expected": 3200
+    },
+    {
+      "id": "int8-stack-smaller-than-fp32",
+      "text": "The INT8 inference frame is smaller than the FP32 one at the same width.",
+      "artifact": "artifacts/resource_audit.json",
+      "query": "stack.512.tqf_forward_bytes",
+      "op": ">",
+      "expected": 3200
+    },
+    {
+      "id": "fuzz-no-mismatches",
+      "text": "Across 500 randomly generated models the C engine never disagreed with the Python reference.",
+      "artifact": "artifacts/fuzz.json",
+      "query": "mismatched",
+      "op": "==",
+      "expected": 0
+    },
+    {
+      "id": "fuzz-trial-count",
+      "text": "The differential fuzzer ran 500 configurations.",
+      "artifact": "artifacts/fuzz.json",
+      "query": "trials",
+      "op": ">=",
+      "expected": 500
+    },
+    {
+      "id": "fuzz-bit-exact-count",
+      "text": "416 of those configurations were quantizable and all were bit-exact.",
+      "artifact": "artifacts/fuzz.json",
+      "query": "bit_exact",
+      "op": ">=",
+      "expected": 350
+    },
+    {
+      "id": "latency-is-median-of-trials",
+      "text": "Timing figures are medians of at least 7 trials, not single runs.",
+      "artifact": "artifacts/latency.json",
+      "query": "trials",
+      "op": ">=",
+      "expected": 7
+    },
+    {
+      "id": "int8-fp32-accuracy-identical-in-c",
+      "text": "The INT8 and FP32 C kernels score identically on the test set.",
+      "artifact": "artifacts/latency.json",
+      "query": "int8_accuracy",
+      "op": "==",
+      "expected": 0.986111,
+      "tol": 1e-06
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "cases_total": 13,
+  "cases_run": 13,
+  "cases_skipped": 0,
+  "all_bit_exact": true,
+  "distinct_accuracies": [
+    0.986111
+  ],
+  "architectures_verified": [
+    "aarch64",
+    "arm32",
+    "riscv64",
+    "x86-64"
+  ],
+  "results": [
+    {
+      "case": "gcc_x86-64_O0",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "gcc_x86-64_O1",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "gcc_x86-64_O2",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "gcc_x86-64_O3",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "gcc_x86-64_Os",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "clang_x86-64_O0",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "clang_x86-64_O1",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "clang_x86-64_O2",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "clang_x86-64_O3",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "clang_x86-64_Os",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "zig_aarch64_O2",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "zig_riscv64_O2",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "zig_arm32_O2",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    }
+  ]
+}

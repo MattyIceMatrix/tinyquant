@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Reproduce every number in the README from a clean checkout, then check the
+  # README against them. If a claim drifts from its measurement, this job fails.
+  reproduce-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install cross-architecture tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static valgrind clang
+
+      - name: Compiler versions
+        run: |
+          gcc --version | head -1
+          clang --version | head -1
+          python -m ziglang version
+
+      - name: Train the reference model
+        run: make train
+
+      - name: Quantize and export
+        run: make export
+
+      - name: Bit-exactness, C engine vs Python reference
+        run: make crossval
+
+      - name: Portability matrix (13 builds, 4 architectures)
+        run: make portability
+
+      - name: Resource audit (heap, stack, valgrind)
+        run: make audit
+
+      - name: Accuracy sweep
+        run: make sweep
+
+      - name: Differential fuzzing
+        run: make fuzz FUZZ_TRIALS=200
+
+      - name: Test suite
+        run: make test
+
+      - name: Verify every README claim against its artifact
+        run: python -m pytest tests/test_claims.py -q
+
+      - name: Upload measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: measurements
+          path: artifacts/
+
+  # Timing-sensitive jobs are kept separate and are not allowed to fail the
+  # build: a shared CI runner is not a controlled benchmarking environment, and
+  # pretending otherwise would make the latency numbers meaningless. The
+  # directional claims (INT8 slower when cache-resident) are checked above.
+  benchmarks-informational:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: make train export
+      - run: make bench
+      - run: make opt-levels
+      - run: make scaling
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: timings
+          path: artifacts/

@@ -1,0 +1,10 @@
+{
+  "samples": 360,
+  "classes": 10,
+  "mismatched_samples": 0,
+  "mismatched_values": 0,
+  "worst_abs_diff": 0,
+  "argmax_disagreements": 0,
+  "c_engine_accuracy": 0.986111,
+  "bit_exact": true
+}

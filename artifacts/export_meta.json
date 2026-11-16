@@ -1,0 +1,22 @@
+{
+  "granularity": "per_channel",
+  "calibration": "minmax",
+  "weight_bits": 8,
+  "calib_size": 256,
+  "fp32_test_acc": 0.9861111111111112,
+  "int8_test_acc": 0.9861111111111112,
+  "accuracy_delta_pp": 0.0,
+  "fp32_weight_bytes": 26280,
+  "int8_deployed_bytes": 7524,
+  "compression_x": 3.493,
+  "file_bytes": {
+    "model.tq8": 7592,
+    "model.tqf": 26340
+  },
+  "activation_ranges": [
+    1.0,
+    4.91106,
+    14.19501,
+    42.07107
+  ]
+}
