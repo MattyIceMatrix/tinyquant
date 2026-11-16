@@ -84,6 +84,8 @@ class QuantModel:
     granularity: str
     calibration: str
     weight_bits: int = 8
+    bias_fit: str = "rescale"
+    rescaled_channels: int = 0
     act_ranges: list[float] = field(default_factory=list)
 
     # ---- quantize / dequantize helpers -----------------------------------
@@ -144,12 +146,33 @@ def quantize_model(
     calibration: str = "minmax",
     percentile: float = 99.9,
     weight_bits: int = 8,
+    bias_fit: str = "rescale",
 ) -> QuantModel:
+    """Quantize `model` using activation ranges calibrated on `x_calib`.
+
+    bias_fit controls what happens when a bias cannot be represented in int32.
+    Biases live in accumulator units, scaled by s_x * s_w, so when weights are
+    very small and activations very large that product gets small enough that an
+    ordinary bias needs more than 31 bits.
+
+      "strict"   raise OverflowError. This was the original behaviour, and the
+                 differential fuzzer hit it on 84 of 500 random configurations.
+      "rescale"  coarsen the weight scale for the affected output channels just
+                 enough that the bias fits. This trades weight resolution --
+                 which the measurements show costs nothing on a trained model --
+                 for a representable bias, instead of refusing to quantize.
+
+    Silently wrapping the bias is never an option: it produces a model that is
+    subtly wrong in a way accuracy testing on an easy task may never reveal.
+    """
+    if bias_fit not in ("strict", "rescale"):
+        raise ValueError(f"unknown bias_fit: {bias_fit}")
     act_ranges = collect_activation_ranges(model, x_calib, calibration, percentile)
     act_scales = [r / QMAX for r in act_ranges]
     wmax = weight_qmax(weight_bits)
 
     layers: list[QuantLayer] = []
+    rescaled_channels = 0
     for i in range(model.n_layers):
         W, b = model.W[i], model.b[i]
         n_out = W.shape[1]
@@ -162,14 +185,45 @@ def quantize_model(
             raise ValueError(f"unknown granularity: {granularity}")
 
         w_scale = w_absmax / wmax
-        qW = np.clip(np.rint(W / w_scale[None, :]), -wmax, wmax).astype(np.int8)
-
         s_x = act_scales[i]
         s_y = act_scales[i + 1]
+
+        # Smallest weight scale that keeps every bias inside int32 -- with
+        # room left over for the dot product that gets added to it.
+        #
+        # Fitting the bias at exactly INT32_MAX is not enough: the accumulator
+        # holds bias + sum(x_i * w_i), so a bias sitting at the limit overflows
+        # as soon as any real input arrives. The worst-case dot product is
+        # n_in * 127 * wmax (every activation and weight saturated, all the
+        # same sign), so that much of the range is reserved before the bias is
+        # allowed to use what is left. On a trained model this reservation is
+        # about 0.05% of the range and changes nothing.
+        n_in = W.shape[0]
+        headroom = int(n_in) * QMAX * int(wmax)
+        bias_budget = max(INT32_MAX - headroom, 1)
+        min_scale_for_bias = np.abs(b) / (s_x * bias_budget)
+        needs_rescale = min_scale_for_bias > w_scale
+        if needs_rescale.any():
+            if bias_fit == "strict":
+                raise OverflowError("bias does not fit in int32")
+            # 1 + 1e-6 of headroom so rounding cannot push the value back out.
+            target = np.maximum(w_scale, min_scale_for_bias * (1.0 + 1e-6))
+            if granularity == "per_tensor":
+                # A per-tensor model has one shared scale; raising a single
+                # channel's scale would quietly make it per-channel, so the
+                # shared scale moves instead.
+                target = np.full_like(target, float(target.max()))
+                rescaled_channels += int(len(target))
+            else:
+                rescaled_channels += int(needs_rescale.sum())
+            w_scale = target
+
+        qW = np.clip(np.rint(W / w_scale[None, :]), -wmax, wmax).astype(np.int8)
+
         bias_scale = s_x * w_scale                     # bias lives in accumulator units
         qb = np.rint(b / bias_scale).astype(np.int64)
         if qb.min() < INT32_MIN or qb.max() > INT32_MAX:
-            raise OverflowError("bias does not fit in int32")
+            raise OverflowError("bias does not fit in int32 even after rescaling")
         qb = qb.astype(np.int32)
 
         mults = [quantize_multiplier(float(s_x * w_scale[j] / s_y)) for j in range(n_out)]
@@ -187,4 +241,5 @@ def quantize_model(
 
     return QuantModel(layers=layers, in_scale=act_scales[0], granularity=granularity,
                       calibration=calibration, act_ranges=act_ranges,
-                      weight_bits=weight_bits)
+                      weight_bits=weight_bits, bias_fit=bias_fit,
+                      rescaled_channels=rescaled_channels)

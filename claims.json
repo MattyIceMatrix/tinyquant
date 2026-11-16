@@ -173,11 +173,11 @@
     },
     {
       "id": "thirteen-builds",
-      "text": "13 builds are run in the portability matrix.",
+      "text": "26 builds are run in the portability matrix: 13 configurations across two engines.",
       "artifact": "artifacts/portability.json",
       "query": "cases_run",
       "op": ">=",
-      "expected": 13
+      "expected": 26
     },
     {
       "id": "four-architectures",
@@ -194,9 +194,9 @@
     },
     {
       "id": "one-accuracy-across-all-builds",
-      "text": "All 13 builds produce exactly one distinct accuracy value.",
+      "text": "Every build produces exactly one distinct dense-engine accuracy value.",
       "artifact": "artifacts/portability.json",
-      "query": "distinct_accuracies",
+      "query": "distinct_accuracies_dense",
       "op": "==",
       "expected": [
         0.986111
@@ -260,11 +260,11 @@
     },
     {
       "id": "fuzz-bit-exact-count",
-      "text": "416 of those configurations were quantizable and all were bit-exact.",
+      "text": "All 500 fuzz configurations quantized and all were bit-exact.",
       "artifact": "artifacts/fuzz.json",
       "query": "bit_exact",
       "op": ">=",
-      "expected": 350
+      "expected": 500
     },
     {
       "id": "latency-is-median-of-trials",
@@ -282,6 +282,121 @@
       "op": "==",
       "expected": 0.986111,
       "tol": 1e-06
+    },
+    {
+      "id": "one-accuracy-across-all-builds-conv",
+      "text": "Every build produces exactly one distinct conv-engine accuracy value.",
+      "artifact": "artifacts/portability.json",
+      "query": "distinct_accuracies_conv",
+      "op": "==",
+      "expected": [
+        0.977778
+      ]
+    },
+    {
+      "id": "both-engines-verified",
+      "text": "Both the dense and the conv engine are verified in every configuration.",
+      "artifact": "artifacts/portability.json",
+      "query": "engines_verified",
+      "op": "==",
+      "expected": [
+        "conv",
+        "dense"
+      ]
+    },
+    {
+      "id": "conv-int8-lossless",
+      "text": "INT8 per-channel quantization of the CNN costs 0.00pp.",
+      "artifact": "artifacts/export_cnn_meta.json",
+      "query": "accuracy_delta_pp",
+      "op": "==",
+      "expected": 0.0,
+      "tol": 1e-09
+    },
+    {
+      "id": "conv-compression",
+      "text": "The INT8 CNN is 3.70x smaller than FP32.",
+      "artifact": "artifacts/export_cnn_meta.json",
+      "query": "compression_x",
+      "op": "==",
+      "expected": 3.703,
+      "tol": 0.002
+    },
+    {
+      "id": "conv-per-channel-gap-at-two-bits",
+      "text": "At 2-bit weights the CNN scores 71.94% with per-channel scales.",
+      "artifact": "artifacts/sweep_cnn.json",
+      "query": "rows[weight_bits=2,granularity=per_channel,calibration=minmax].test_acc",
+      "op": "==",
+      "expected": 0.719444,
+      "tol": 1e-05
+    },
+    {
+      "id": "conv-per-tensor-collapse-at-two-bits",
+      "text": "At 2-bit weights per-tensor scaling collapses the CNN to 32.78%.",
+      "artifact": "artifacts/sweep_cnn.json",
+      "query": "rows[weight_bits=2,granularity=per_tensor,calibration=minmax].test_acc",
+      "op": "==",
+      "expected": 0.327778,
+      "tol": 1e-05
+    },
+    {
+      "id": "fuzz-refusals-after-bias-fix",
+      "text": "After the bias fix, 0 of 500 fuzz configurations are refused (was 84).",
+      "artifact": "artifacts/fuzz.json",
+      "query": "rejected_by_quantizer",
+      "op": "==",
+      "expected": 0
+    },
+    {
+      "id": "cnn-params",
+      "text": "The CNN has 3,818 parameters.",
+      "artifact": "artifacts/train_cnn_meta.json",
+      "query": "params",
+      "op": "==",
+      "expected": 3818
+    },
+    {
+      "id": "conv-engine-bit-exact",
+      "text": "The conv C engine reproduces the Python reference exactly on every test image.",
+      "artifact": "artifacts/crossval_cnn.json",
+      "query": "mismatched_values",
+      "op": "==",
+      "expected": 0
+    },
+    {
+      "id": "conv-engine-no-argmax-disagreement",
+      "text": "The conv engine and the Python reference never disagree on the predicted class.",
+      "artifact": "artifacts/crossval_cnn.json",
+      "query": "argmax_disagreements",
+      "op": "==",
+      "expected": 0
+    },
+    {
+      "id": "conv-engine-accuracy",
+      "text": "The conv C engine scores 97.78%, the same as the Python reference.",
+      "artifact": "artifacts/crossval_cnn.json",
+      "query": "c_engine_accuracy",
+      "op": "==",
+      "expected": 0.977778,
+      "tol": 1e-06
+    },
+    {
+      "id": "conv-four-bit-per-channel-beats-per-tensor",
+      "text": "At 4-bit weights per-channel scaling beats per-tensor on the CNN.",
+      "artifact": "artifacts/sweep_cnn.json",
+      "query": "rows[weight_bits=4,granularity=per_channel,calibration=minmax].test_acc",
+      "op": ">=",
+      "expected": 0.98
+    },
+    {
+      "id": "noise-floor-recorded",
+      "text": "One test sample is 0.28pp, recorded so accuracy differences are not overstated.",
+      "artifact": "artifacts/sweep_cnn.json",
+      "query": "one_sample_pp",
+      "op": "==",
+      "expected": 0.2778,
+      "tol": 0.001
     }
   ]
 }

@@ -51,7 +51,16 @@ jobs:
       - name: Bit-exactness, C engine vs Python reference
         run: make crossval
 
-      - name: Portability matrix (13 builds, 4 architectures)
+      - name: Train the convolutional model
+        run: make train-cnn
+
+      - name: Quantize and export the CNN
+        run: make export-cnn
+
+      - name: Bit-exactness, conv engine vs Python reference
+        run: make crossval-cnn
+
+      - name: Portability matrix (26 builds, 4 architectures, 2 engines)
         run: make portability
 
       - name: Resource audit (heap, stack, valgrind)
@@ -59,6 +68,9 @@ jobs:
 
       - name: Accuracy sweep
         run: make sweep
+
+      - name: Convolution accuracy sweep
+        run: make sweep-cnn
 
       - name: Differential fuzzing
         run: make fuzz

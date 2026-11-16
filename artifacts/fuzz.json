@@ -1,18 +1,16 @@
 {
   "trials": 500,
   "seed": 20261116,
-  "bit_exact": 416,
+  "bit_exact": 500,
   "mismatched": 0,
-  "rejected_by_quantizer": 84,
-  "rejection_reasons": {
-    "OverflowError: bias does not fit in int32": 84
-  },
+  "rejected_by_quantizer": 0,
+  "rejection_reasons": {},
   "weight_distributions_covered": {
-    "normal": 77,
-    "outlier": 88,
-    "zeros": 9,
+    "normal": 79,
+    "outlier": 89,
+    "zeros": 85,
     "bimodal": 77,
-    "tiny": 69,
+    "tiny": 74,
     "huge": 96
   },
   "failures": []

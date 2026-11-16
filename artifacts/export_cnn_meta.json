@@ -1,0 +1,42 @@
+{
+  "granularity": "per_channel",
+  "calibration": "minmax",
+  "weight_bits": 8,
+  "fp32_test_acc": 0.9777777777777777,
+  "int8_test_acc": 0.9777777777777777,
+  "accuracy_delta_pp": 0.0,
+  "fp32_weight_bytes": 15272,
+  "int8_deployed_bytes": 4124,
+  "compression_x": 3.703,
+  "file_bytes": 4224,
+  "layers": [
+    {
+      "kind": "conv",
+      "shape": [
+        3,
+        3,
+        1,
+        8
+      ],
+      "relu": true
+    },
+    {
+      "kind": "conv",
+      "shape": [
+        3,
+        3,
+        8,
+        16
+      ],
+      "relu": true
+    },
+    {
+      "kind": "dense",
+      "shape": [
+        256,
+        10
+      ],
+      "relu": false
+    }
+  ]
+}

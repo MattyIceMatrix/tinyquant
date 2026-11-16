@@ -61,3 +61,46 @@ def export_test_vectors(x_q: np.ndarray, x_f: np.ndarray, y: np.ndarray, path: s
         f.write(x_q.astype(np.int8).tobytes(order="C"))
         f.write(x_f.astype("<f4").tobytes(order="C"))
         f.write(y.astype("<i4").tobytes())
+
+
+MAGIC_GRAPH = b"TQG1"
+
+
+def export_graph_int8(qnet, path: str) -> int:
+    """Write a conv/dense graph in the flat TQG1 format.
+
+    Layout mirrors the dense format: a fixed header, then per layer a fixed
+    header followed by weights, biases and requantization parameters, each
+    4-byte aligned so the C side can point directly into the mapped bytes.
+    """
+    from .conv import KIND_CONV
+
+    with open(path, "wb") as f:
+        f.write(MAGIC_GRAPH)
+        in_h, in_w, in_c = qnet.in_shape
+        f.write(struct.pack("<IIIII", len(qnet.layers), in_h, in_w, in_c, qnet.weight_bits))
+        f.write(struct.pack("<f", qnet.in_scale))
+        for l in qnet.layers:
+            if l.kind == KIND_CONV:
+                kh, kw, c_in, c_out = l.qW.shape
+            else:
+                kh = kw = 1
+                c_in, c_out = l.qW.shape
+            f.write(struct.pack("<IIIIII", l.kind, 1 if l.relu else 0, kh, kw, c_in, c_out))
+            f.write(l.qW.astype(np.int8).tobytes(order="C"))
+            f.write(l.qb.astype("<i4").tobytes())
+            f.write(l.q_mult.astype("<i4").tobytes())
+            f.write(l.left_shift.astype(np.int8).tobytes())
+            f.write(l.right_shift.astype(np.int8).tobytes())
+    import os
+    return os.path.getsize(path)
+
+
+def export_image_vectors(x_q: np.ndarray, y: np.ndarray, path: str) -> None:
+    """Quantized NHWC images plus labels, for the conv cross-validation harness."""
+    with open(path, "wb") as f:
+        f.write(b"TQW1")
+        n, h, w, c = x_q.shape
+        f.write(struct.pack("<IIII", n, h, w, c))
+        f.write(x_q.astype(np.int8).tobytes(order="C"))
+        f.write(y.astype("<i4").tobytes())

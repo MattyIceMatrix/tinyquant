@@ -193,12 +193,87 @@ Reproduce with `make bench`.
 
 ---
 
+## 9. The bias fix was wrong the first time, and inference caught it.
+
+**Finding (§6 continued).** Fuzzing refused 84 of 500 configurations because
+biases did not fit in int32. The fix: instead of refusing, coarsen the weight
+scale for the affected output channels just enough that the bias fits — trading
+weight resolution, which costs nothing on a trained model, for a representable
+bias.
+
+**It did not work.** Quantization then succeeded, and *inference* overflowed.
+
+The reason is worth stating plainly, because it is the kind of thing that is
+obvious only afterwards: the accumulator holds `bias + sum(x_i * w_i)`. Fitting
+the bias at exactly `INT32_MAX` leaves nothing for the sum, so the layer
+overflows the moment a real input arrives. The bias budget has to reserve the
+worst-case dot product — `n_in * 127 * wmax`, every activation and weight
+saturated with the same sign — before the bias is allowed to use what is left.
+
+On the trained model that reservation is about 0.05% of the int32 range and
+changes nothing: zero channels are rescaled and accuracy is identical to the
+digit.
+
+**Result.** Refusals across 500 random configurations:
+
+```
+before the fix            84   (all: bias does not fit in int32)
+after the naive fix        3   (all: int32 accumulator overflow)
+after reserving headroom   0
+```
+
+500 of 500 now quantize, and all 500 are bit-exact against the C engine.
+
+**Why it is in the findings.** My first fix turned one overflow into another one
+further down the pipeline. The only reason that did not ship is that the
+reference implementation asserts its accumulator bounds instead of trusting
+them. Reproduce with `make fuzz`.
+
+---
+
+## 10. Per-channel scaling matters roughly three times more for convolutions.
+
+**Hypothesis.** The dense sweep showed per-channel scaling buying nothing until
+5 bits and +11.4pp at 2 bits. Convolutions should behave similarly.
+
+**Measurement.** They do not. The same sweep on the conv model:
+
+| weight bits | dense advantage | conv advantage |
+|---|---|---|
+| 8 | 0.00pp | −0.28pp |
+| 4 | +0.56pp | +1.11pp |
+| 2 | +11.39pp | **+39.17pp** |
+
+At 2 bits per-tensor scaling collapses the CNN to 32.78% — barely better than
+guessing three classes out of ten — while per-channel holds 71.94%.
+
+**Status: refuted, in the useful direction.** It follows from what a conv kernel
+is. Each output channel is a filter with its own dynamic range, and per-tensor
+scaling forces every filter in the stack to share one scale, so the quiet
+filters quantize to nearly nothing. A dense layer's columns are less dissimilar.
+I would now expect the effect to be larger still for depthwise-separable
+convolutions, which is the obvious next measurement rather than an assertion.
+
+**Caveat I am keeping attached to this.** The test set is 360 samples, so one
+sample is 0.28pp. The 8-bit and 5-bit rows are inside noise and should be read
+as "no detectable difference". Only the 4-bit and 2-bit rows carry the claim.
+
+Reproduce with `make sweep-cnn`.
+
+---
+
 ## What this adds up to
 
 The headline claim of this repo is not "I made inference faster." It is: I built
 the pipeline, measured it properly, got a result I did not want, found the actual
 mechanism, and showed the conditions under which the optimisation does and does
-not pay. The engine is bit-exact across four instruction sets, two compilers and
-five optimisation levels, allocation-free on the inference path, and clean under
+not pay. Both engines are bit-exact across four instruction sets, two compilers and five
+optimisation levels, allocation-free on the inference path, and clean under
 valgrind — which is what makes the negative result worth anything. A slow kernel
 that is also wrong teaches nobody anything.
+
+Four of the ten findings here are mistakes of mine that measurement caught: a
+benchmark protocol that reported a 1.71x speedup from noise, two memory leaks, a
+bias fix that moved the overflow instead of removing it, and a feature I built
+before I could show it was needed. That ratio is not an accident of this project.
+It is what the work looks like when the checking is real.

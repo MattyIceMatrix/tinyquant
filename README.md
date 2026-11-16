@@ -3,8 +3,9 @@
 **INT8 post-training quantization and an integer-only inference engine, both written from scratch — plus the benchmark that shows when quantizing is the wrong call.**
 
 No PyTorch, no TensorFlow, no ONNX Runtime, no TFLite. The trainer is NumPy, the
-quantizer is plain Python, the inference engine is dependency-free C99, and every
-number below is produced by `make all` on a clean checkout.
+quantizer is plain Python, the inference engines are dependency-free C99 — one
+for dense layers, one for convolutions — and every number below is produced by
+`make all` on a clean checkout.
 
 [![CI](https://github.com/MattyIceMatrix/tinyquant/actions/workflows/ci.yml/badge.svg)](https://github.com/MattyIceMatrix/tinyquant/actions/workflows/ci.yml)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -100,6 +101,43 @@ demonstrate.
 
 ---
 
+## Convolutions
+
+The same scheme, unchanged, applied to a conv stack
+(`conv3x3x8 -> conv3x3x16 -> dense256x10`, 3,818 parameters). Nothing about the
+quantization had to be redesigned to cross from matrix multiplies to
+convolutions — only the question of which axis counts as an output channel.
+
+| | FP32 | INT8 (per-channel) |
+|---|---|---|
+| Test accuracy | 97.78% | **97.78%** (−0.00pp) |
+| Deployed size | 15,272 B | **4,124 B** (3.70× smaller) |
+| C engine vs Python reference | — | **bit-exact**, 0 of 3,600 values differ |
+
+The interesting result is not that it works — it is that **weight-scale
+granularity matters far more for convolutions than for dense layers**:
+
+![Per-channel advantage, dense vs conv](docs/per_channel_gap.svg)
+
+| weight bits | dense: per-channel advantage | conv: per-channel advantage |
+|---|---|---|
+| 8 | 0.00pp | −0.28pp |
+| 5 | +0.28pp | +0.28pp |
+| 4 | +0.56pp | +1.11pp |
+| 2 | +11.39pp | **+39.17pp** |
+
+At 2 bits, per-tensor scaling collapses the CNN to 32.78% while per-channel
+holds 71.94%. That follows from what a conv kernel is: each output channel is a
+filter with its own dynamic range, and they all share one scale under
+per-tensor. A dense layer's columns are less dissimilar, so it suffers less.
+
+An honest caveat on reading that table: the test set is 360 samples, so one
+sample is 0.28pp. Everything in the 8-to-5-bit rows is inside measurement noise
+and should be read as "no detectable difference", not as a ranking. The 4-bit
+and 2-bit rows are real.
+
+---
+
 ## Why you can trust the numbers above
 
 ### The C engine is bit-exact with the Python reference
@@ -117,17 +155,23 @@ worst absolute difference: 0
 
 ### …on four instruction sets, under two compilers, at five optimization levels
 
-Every build checks the same reference bytes. Cross-architecture builds use
-`zig cc` and run under `qemu-user`, so the whole matrix reproduces on an ordinary
-Linux box with no special hardware.
+Every build checks the same reference bytes, for **both** engines. Cross-architecture
+builds use `zig cc` and run under `qemu-user`, so the whole matrix reproduces on
+an ordinary Linux box with no special hardware.
 
 | | verified |
 |---|---|
 | Architectures | x86-64, **aarch64**, **riscv64**, **arm32** (hard-float) |
 | Compilers | gcc 13.3, clang |
 | Optimization | `-O0 -O1 -O2 -O3 -Os` |
-| Builds run | **13** |
-| Distinct accuracy values observed across all 13 | **1** |
+| Engines | dense and conv |
+| Builds run | **26** |
+| Distinct accuracy values across all 26 | **1 per engine** |
+
+The conv engine is checked separately rather than assumed: it shares the
+requantization arithmetic with the dense one, so an arithmetic portability bug
+would show up in both — but a layout or indexing bug would show up only in the
+conv kernel.
 
 ### …and on 500 randomly generated models
 
@@ -138,9 +182,12 @@ weights that would produce a zero scale, activations large enough to threaten th
 int32 accumulator, and single-neuron layers where vectorized code reads off the
 end. See [`artifacts/fuzz.json`](artifacts/fuzz.json).
 
-Configurations the quantizer *refuses* — a bias that will not fit in int32, an
-accumulator that would overflow — are counted and reported, not silently skipped.
-A refusal is correct behaviour and hiding it would overstate the coverage.
+**500 of 500 are now quantizable and bit-exact.** The first run of this fuzzer
+refused 84 of 500 — biases that would not fit in int32 — which is how that
+limitation was found and then fixed (see [FINDINGS.md §9](FINDINGS.md)). Any
+configuration the quantizer still refuses is counted and named in the report
+rather than silently skipped: a refusal is correct behaviour, and hiding it
+would overstate the coverage.
 
 ### …with no memory errors and no allocations
 
@@ -162,13 +209,13 @@ treatment timing claims get, and for the same reason.
 
 ### Every number in this README is a test
 
-[`claims.json`](claims.json) binds all 33 claims above to the artifact that produced
+[`claims.json`](claims.json) binds all 46 claims above to the artifact that produced
 it. `tests/test_claims.py` re-reads the measurements and fails if any of them
 moved, so CI goes red when the prose drifts from reality.
 
 ```
 $ pytest tests/test_claims.py -q
-34 passed
+47 passed
 ```
 
 Accuracy and size claims are asserted exactly, because the pipeline is
@@ -246,9 +293,11 @@ ping-pong stack buffers. The engine never calls `malloc`.
 Stated plainly, because a reviewer will find them anyway and I would rather they
 find them here.
 
-- **The model is small and the task is easy.** 6,570 parameters, 8×8 digit
-  images, 98.61% baseline. INT8 being lossless here is weak evidence that INT8
-  is lossless generally — on this task there is a lot of headroom to lose.
+- **The models are small and the task is easy.** 6,570 parameters dense, 3,818
+  convolutional, 8×8 digit images. INT8 being lossless here is weak evidence
+  that INT8 is lossless generally — on this task there is a lot of headroom to
+  lose. The 2-bit results are the ones that discriminate, which is why they are
+  the ones the conclusions lean on.
 - **No real edge hardware yet.** Everything ran on a cloud x86-64 vCPU. The
   ARM64, RISC-V and ARM32 results prove *correctness* on those instruction sets,
   not performance — they ran under emulation, so their timings are meaningless
@@ -259,8 +308,12 @@ find them here.
   medians are reported and spreads are recorded. The L1-resident and
   past-L2 endpoints were stable to under 1%, which is why the conclusion rests
   on those.
-- **Dense layers only.** No convolutions, no attention, no batching, no
-  per-axis quantization for anything but the output dimension.
+- **Dense and 'valid' stride-1 convolutions only.** No padding, no striding, no
+  pooling, no attention, no batching, and no per-axis quantization for anything
+  but the output channel.
+- **The bias-rescaling fix is implemented for the dense path only.** The conv
+  quantizer still refuses rather than rescaling. No trained model in this repo
+  reaches that condition, but the inconsistency is real and it is mine.
 - **Activations are symmetric.** Zero-point 0 means a post-ReLU tensor only ever
   uses `[0, 127]` — one of eight bits spent representing negatives that ReLU
   already removed. Asymmetric activation quantization would recover it.
@@ -268,9 +321,9 @@ find them here.
   no byte swapping. A big-endian target would need a loader change; it is not
   claimed to work and not tested.
 - **Bit-packing is accounted for but not implemented.** Sub-8-bit sizes are
-  computed as packed; the engine still holds those values in int8 containers.
+  computed as packed; the engines still hold those values in int8 containers.
   The size column is therefore what a packed deployment *would* cost, and is
-  labelled as such.
+  labelled as such. This is the next thing I intend to close.
 
 ---
 
@@ -284,8 +337,10 @@ find them here.
    changes that, and that claim deserves a measurement rather than a citation.
 3. Add asymmetric activation quantization and measure whether the recovered bit
    matters below 4 bits.
-4. Extend to convolutions, where per-channel scaling and memory layout matter
-   considerably more than they do here.
+4. Implement real sub-8-bit packing so the size column is measured rather than
+   computed, and extend bias rescaling to the conv quantizer.
+5. Add padding, striding and pooling, then a depthwise-separable block — the
+   layer type where per-channel scaling is known to matter most of all.
 
 ---
 
@@ -309,13 +364,17 @@ numbers will match exactly; the timings will not, and should not.
 ## Repository layout
 
 ```
-tinyquant/        quantizer, fixed-point arithmetic, model, exporters (Python)
-engine/           tinyq.c/.h    dependency-free C99 inference engine
-                  crossval.c    bit-exactness harness
-                  bench.c       latency benchmark
+tinyquant/        quantizers (dense + conv), fixed-point arithmetic, models,
+                  exporters (Python)
+engine/           tinyq.c/.h          dense C99 inference engine
+                  tinyq_graph.c/.h    conv C99 inference engine
+                  crossval.c          dense bit-exactness harness
+                  crossval_graph.c    conv bit-exactness harness
+                  bench.c             latency benchmark
 scripts/          train, export, sweep, scaling study, portability matrix,
                   resource audit, differential fuzzer, chart rendering
-tests/            97 tests: arithmetic, quantizer properties, engine, claims
+tests/            124 tests: arithmetic, quantizer properties, both engines,
+                  bias fitting, conv path, claims
 artifacts/        every measurement, as JSON
 claims.json       README claims bound to the artifacts that produced them
 FINDINGS.md       hypotheses I got wrong, and the measurements that corrected me

@@ -15,12 +15,12 @@ ART  := artifacts
 BIN  := build
 ENG  := engine/tinyq.c
 
-.PHONY: all verify train export crossval bench sweep scaling charts test clean help portability audit fuzz opt-levels
+.PHONY: all verify train export crossval bench sweep scaling charts test clean help portability audit fuzz opt-levels train-cnn export-cnn crossval-cnn sweep-cnn
 
 help:
 	@grep -E '^[a-z-]+:' Makefile | grep -v grep | cut -d: -f1 | sed 's/^/  make /'
 
-all: train export crossval bench sweep scaling opt-levels portability audit fuzz charts test
+all: train export crossval train-cnn export-cnn crossval-cnn bench sweep sweep-cnn scaling opt-levels portability audit fuzz charts test
 
 $(BIN):
 	mkdir -p $(BIN)
@@ -49,6 +49,23 @@ bench: $(BIN)
 sweep:
 	$(PYTHON) scripts/sweep.py
 
+# --- convolutional path -------------------------------------------------
+train-cnn:
+	$(PYTHON) scripts/train_cnn.py
+
+export-cnn:
+	$(PYTHON) scripts/export_cnn.py
+
+# Same standard as the dense engine: byte-identical or the build fails.
+crossval-cnn: $(BIN)
+	$(CC) $(CFLAGS) -DTQ_SKIP_ZEROS=0 $(ENG) engine/tinyq_graph.c engine/crossval_graph.c \
+		-o $(BIN)/crossval_graph
+	$(BIN)/crossval_graph $(ART)/model_cnn.tqg $(ART)/test_images.tqw \
+		$(ART)/reference_cnn_out.bin | tee $(ART)/crossval_cnn.json
+
+sweep-cnn:
+	$(PYTHON) scripts/sweep_cnn.py
+
 scaling:
 	$(PYTHON) scripts/scaling_study.py 50
 
@@ -72,7 +89,7 @@ charts:
 test:
 	$(PYTHON) -m pytest tests/ -q
 
-verify: crossval test
+verify: crossval crossval-cnn test
 
 clean:
 	rm -rf $(BIN) __pycache__ */__pycache__ .pytest_cache

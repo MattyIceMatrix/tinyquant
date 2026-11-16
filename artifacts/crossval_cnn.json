@@ -1,0 +1,9 @@
+{
+  "images": 360,
+  "classes": 10,
+  "mismatched_values": 0,
+  "worst_abs_diff": 0,
+  "argmax_disagreements": 0,
+  "c_engine_accuracy": 0.977778,
+  "bit_exact": true
+}

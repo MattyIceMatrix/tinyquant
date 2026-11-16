@@ -77,6 +77,45 @@ def chart_scaling(rows: list[dict], out: pathlib.Path, l1_kib: float, l2_kib: fl
     plt.close(fig)
 
 
+def chart_granularity_gap(dense: dict, conv: dict, out: pathlib.Path) -> None:
+    """How much per-channel scaling buys, dense vs conv, as bits come down."""
+    fig, ax = plt.subplots(figsize=(7.2, 4.0))
+
+    def gap(sweep):
+        rows = [r for r in sweep["rows"] if r["calibration"] == "minmax"]
+        bits = sorted({r["weight_bits"] for r in rows}, reverse=True)
+        out_x, out_y = [], []
+        for b in bits:
+            pc = next(r for r in rows if r["weight_bits"] == b and r["granularity"] == "per_channel")
+            pt = next(r for r in rows if r["weight_bits"] == b and r["granularity"] == "per_tensor")
+            out_x.append(b)
+            out_y.append((pc["test_acc"] - pt["test_acc"]) * 100)
+        return out_x, out_y
+
+    for sweep, colour, label in ((dense, C_TENSOR, "dense model (6,570 params)"),
+                                 (conv, C_CHANNEL, "conv model (3,818 params)")):
+        xs, ys = gap(sweep)
+        ax.plot(xs, ys, marker="o", color=colour, linewidth=2, label=label)
+
+    ax.axhline(0, color=C_BASE, linestyle="--", linewidth=1.2)
+    one_sample = conv.get("one_sample_pp", 0.278)
+    ax.axhspan(-one_sample, one_sample, color=C_BASE, alpha=0.12)
+    ax.annotate("within one test sample", xy=(5, one_sample), xytext=(0, 4),
+                textcoords="offset points", fontsize=8, color=C_BASE)
+
+    ax.set_xlabel("weight bit-width")
+    ax.set_ylabel("accuracy gained by per-channel scaling (pp)")
+    ax.set_title("Per-channel scaling matters far more for convolutions",
+                 fontsize=11, loc="left", pad=12)
+    ax.invert_xaxis()
+    ax.set_xticks([8, 6, 5, 4, 3, 2])
+    ax.grid(axis="y", color=GRID, linewidth=0.7)
+    ax.legend(frameon=False, loc="upper right")
+    fig.tight_layout()
+    fig.savefig(out, format="svg")
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     art = pathlib.Path("artifacts")
     docs = pathlib.Path("docs")
@@ -84,4 +123,9 @@ if __name__ == "__main__":
     chart_accuracy(json.loads((art / "sweep.json").read_text()), docs / "accuracy_vs_bits.svg")
     chart_scaling(json.loads((art / "scaling_study.json").read_text()),
                   docs / "int8_speedup_vs_size.svg", 96, 4096)
-    print("wrote docs/accuracy_vs_bits.svg and docs/int8_speedup_vs_size.svg")
+    cnn = art / "sweep_cnn.json"
+    if cnn.exists():
+        chart_granularity_gap(json.loads((art / "sweep.json").read_text()),
+                              json.loads(cnn.read_text()),
+                              docs / "per_channel_gap.svg")
+    print("wrote charts to docs/")

@@ -1,0 +1,248 @@
+{
+  "fp32_test_acc": 0.977778,
+  "fp32_weight_bytes": 15272,
+  "n_test": 360,
+  "one_sample_pp": 0.2778,
+  "rows": [
+    {
+      "weight_bits": 8,
+      "granularity": "per_tensor",
+      "calibration": "minmax",
+      "test_acc": 0.980556,
+      "delta_pp": 0.2778,
+      "agreement_with_fp32": 0.997222,
+      "deployed_bytes": 4124,
+      "compression_x": 3.703
+    },
+    {
+      "weight_bits": 8,
+      "granularity": "per_tensor",
+      "calibration": "percentile",
+      "test_acc": 0.983333,
+      "delta_pp": 0.5556,
+      "agreement_with_fp32": 0.994444,
+      "deployed_bytes": 4124,
+      "compression_x": 3.703
+    },
+    {
+      "weight_bits": 8,
+      "granularity": "per_channel",
+      "calibration": "minmax",
+      "test_acc": 0.977778,
+      "delta_pp": 0.0,
+      "agreement_with_fp32": 1.0,
+      "deployed_bytes": 4124,
+      "compression_x": 3.703
+    },
+    {
+      "weight_bits": 8,
+      "granularity": "per_channel",
+      "calibration": "percentile",
+      "test_acc": 0.983333,
+      "delta_pp": 0.5556,
+      "agreement_with_fp32": 0.994444,
+      "deployed_bytes": 4124,
+      "compression_x": 3.703
+    },
+    {
+      "weight_bits": 6,
+      "granularity": "per_tensor",
+      "calibration": "minmax",
+      "test_acc": 0.986111,
+      "delta_pp": 0.8333,
+      "agreement_with_fp32": 0.991667,
+      "deployed_bytes": 3178,
+      "compression_x": 4.806
+    },
+    {
+      "weight_bits": 6,
+      "granularity": "per_tensor",
+      "calibration": "percentile",
+      "test_acc": 0.986111,
+      "delta_pp": 0.8333,
+      "agreement_with_fp32": 0.991667,
+      "deployed_bytes": 3178,
+      "compression_x": 4.806
+    },
+    {
+      "weight_bits": 6,
+      "granularity": "per_channel",
+      "calibration": "minmax",
+      "test_acc": 0.980556,
+      "delta_pp": 0.2778,
+      "agreement_with_fp32": 0.997222,
+      "deployed_bytes": 3178,
+      "compression_x": 4.806
+    },
+    {
+      "weight_bits": 6,
+      "granularity": "per_channel",
+      "calibration": "percentile",
+      "test_acc": 0.980556,
+      "delta_pp": 0.2778,
+      "agreement_with_fp32": 0.997222,
+      "deployed_bytes": 3178,
+      "compression_x": 4.806
+    },
+    {
+      "weight_bits": 5,
+      "granularity": "per_tensor",
+      "calibration": "minmax",
+      "test_acc": 0.980556,
+      "delta_pp": 0.2778,
+      "agreement_with_fp32": 0.997222,
+      "deployed_bytes": 2705,
+      "compression_x": 5.646
+    },
+    {
+      "weight_bits": 5,
+      "granularity": "per_tensor",
+      "calibration": "percentile",
+      "test_acc": 0.983333,
+      "delta_pp": 0.5556,
+      "agreement_with_fp32": 0.991667,
+      "deployed_bytes": 2705,
+      "compression_x": 5.646
+    },
+    {
+      "weight_bits": 5,
+      "granularity": "per_channel",
+      "calibration": "minmax",
+      "test_acc": 0.983333,
+      "delta_pp": 0.5556,
+      "agreement_with_fp32": 0.994444,
+      "deployed_bytes": 2705,
+      "compression_x": 5.646
+    },
+    {
+      "weight_bits": 5,
+      "granularity": "per_channel",
+      "calibration": "percentile",
+      "test_acc": 0.983333,
+      "delta_pp": 0.5556,
+      "agreement_with_fp32": 0.994444,
+      "deployed_bytes": 2705,
+      "compression_x": 5.646
+    },
+    {
+      "weight_bits": 4,
+      "granularity": "per_tensor",
+      "calibration": "minmax",
+      "test_acc": 0.972222,
+      "delta_pp": -0.5556,
+      "agreement_with_fp32": 0.983333,
+      "deployed_bytes": 2232,
+      "compression_x": 6.842
+    },
+    {
+      "weight_bits": 4,
+      "granularity": "per_tensor",
+      "calibration": "percentile",
+      "test_acc": 0.972222,
+      "delta_pp": -0.5556,
+      "agreement_with_fp32": 0.983333,
+      "deployed_bytes": 2232,
+      "compression_x": 6.842
+    },
+    {
+      "weight_bits": 4,
+      "granularity": "per_channel",
+      "calibration": "minmax",
+      "test_acc": 0.983333,
+      "delta_pp": 0.5556,
+      "agreement_with_fp32": 0.991667,
+      "deployed_bytes": 2232,
+      "compression_x": 6.842
+    },
+    {
+      "weight_bits": 4,
+      "granularity": "per_channel",
+      "calibration": "percentile",
+      "test_acc": 0.986111,
+      "delta_pp": 0.8333,
+      "agreement_with_fp32": 0.988889,
+      "deployed_bytes": 2232,
+      "compression_x": 6.842
+    },
+    {
+      "weight_bits": 3,
+      "granularity": "per_tensor",
+      "calibration": "minmax",
+      "test_acc": 0.972222,
+      "delta_pp": -0.5556,
+      "agreement_with_fp32": 0.980556,
+      "deployed_bytes": 1759,
+      "compression_x": 8.682
+    },
+    {
+      "weight_bits": 3,
+      "granularity": "per_tensor",
+      "calibration": "percentile",
+      "test_acc": 0.972222,
+      "delta_pp": -0.5556,
+      "agreement_with_fp32": 0.980556,
+      "deployed_bytes": 1759,
+      "compression_x": 8.682
+    },
+    {
+      "weight_bits": 3,
+      "granularity": "per_channel",
+      "calibration": "minmax",
+      "test_acc": 0.972222,
+      "delta_pp": -0.5556,
+      "agreement_with_fp32": 0.988889,
+      "deployed_bytes": 1759,
+      "compression_x": 8.682
+    },
+    {
+      "weight_bits": 3,
+      "granularity": "per_channel",
+      "calibration": "percentile",
+      "test_acc": 0.969444,
+      "delta_pp": -0.8333,
+      "agreement_with_fp32": 0.986111,
+      "deployed_bytes": 1759,
+      "compression_x": 8.682
+    },
+    {
+      "weight_bits": 2,
+      "granularity": "per_tensor",
+      "calibration": "minmax",
+      "test_acc": 0.327778,
+      "delta_pp": -65.0,
+      "agreement_with_fp32": 0.322222,
+      "deployed_bytes": 1286,
+      "compression_x": 11.876
+    },
+    {
+      "weight_bits": 2,
+      "granularity": "per_tensor",
+      "calibration": "percentile",
+      "test_acc": 0.325,
+      "delta_pp": -65.2778,
+      "agreement_with_fp32": 0.316667,
+      "deployed_bytes": 1286,
+      "compression_x": 11.876
+    },
+    {
+      "weight_bits": 2,
+      "granularity": "per_channel",
+      "calibration": "minmax",
+      "test_acc": 0.719444,
+      "delta_pp": -25.8333,
+      "agreement_with_fp32": 0.727778,
+      "deployed_bytes": 1286,
+      "compression_x": 11.876
+    },
+    {
+      "weight_bits": 2,
+      "granularity": "per_channel",
+      "calibration": "percentile",
+      "test_acc": 0.722222,
+      "delta_pp": -25.5556,
+      "agreement_with_fp32": 0.727778,
+      "deployed_bytes": 1286,
+      "compression_x": 11.876
+    }
+  ]
+}

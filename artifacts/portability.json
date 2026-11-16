@@ -1,10 +1,17 @@
 {
-  "cases_total": 13,
-  "cases_run": 13,
+  "cases_total": 26,
+  "cases_run": 26,
   "cases_skipped": 0,
   "all_bit_exact": true,
-  "distinct_accuracies": [
+  "engines_verified": [
+    "conv",
+    "dense"
+  ],
+  "distinct_accuracies_dense": [
     0.986111
+  ],
+  "distinct_accuracies_conv": [
+    0.977778
   ],
   "architectures_verified": [
     "aarch64",
@@ -15,6 +22,25 @@
   "results": [
     {
       "case": "gcc_x86-64_O0",
+      "engine": "dense",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.986111
+    },
+    {
+      "case": "gcc_x86-64_O0",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "gcc_x86-64_O1",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -23,6 +49,16 @@
     },
     {
       "case": "gcc_x86-64_O1",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "gcc_x86-64_O2",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -31,6 +67,16 @@
     },
     {
       "case": "gcc_x86-64_O2",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "gcc_x86-64_O3",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -39,6 +85,16 @@
     },
     {
       "case": "gcc_x86-64_O3",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "gcc_x86-64_Os",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -47,6 +103,16 @@
     },
     {
       "case": "gcc_x86-64_Os",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "clang_x86-64_O0",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -55,6 +121,16 @@
     },
     {
       "case": "clang_x86-64_O0",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "clang_x86-64_O1",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -63,6 +139,16 @@
     },
     {
       "case": "clang_x86-64_O1",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "clang_x86-64_O2",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -71,6 +157,16 @@
     },
     {
       "case": "clang_x86-64_O2",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "clang_x86-64_O3",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -79,6 +175,16 @@
     },
     {
       "case": "clang_x86-64_O3",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "clang_x86-64_Os",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -87,6 +193,16 @@
     },
     {
       "case": "clang_x86-64_Os",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "zig_aarch64_O2",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -95,6 +211,16 @@
     },
     {
       "case": "zig_aarch64_O2",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "zig_riscv64_O2",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -103,6 +229,16 @@
     },
     {
       "case": "zig_riscv64_O2",
+      "engine": "conv",
+      "built": true,
+      "ran": true,
+      "bit_exact": true,
+      "mismatched_values": 0,
+      "accuracy": 0.977778
+    },
+    {
+      "case": "zig_arm32_O2",
+      "engine": "dense",
       "built": true,
       "ran": true,
       "bit_exact": true,
@@ -111,11 +247,12 @@
     },
     {
       "case": "zig_arm32_O2",
+      "engine": "conv",
       "built": true,
       "ran": true,
       "bit_exact": true,
       "mismatched_values": 0,
-      "accuracy": 0.986111
+      "accuracy": 0.977778
     }
   ]
 }
