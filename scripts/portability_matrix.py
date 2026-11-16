@@ -27,11 +27,22 @@ ART = ROOT / "artifacts"
 
 NATIVE_OPTS = ["-O0", "-O1", "-O2", "-O3", "-Os"]
 NATIVE_COMPILERS = [("gcc", ["gcc"]), ("clang", ["clang"])]
+# Distributions disagree on whether the emulator is packaged as
+# qemu-<arch>-static or plain qemu-<arch> (Ubuntu 26.04 dropped the -static
+# package name), so each target lists the names to try in order. The binaries
+# we run are statically linked by zig either way, so both work.
 CROSS_TARGETS = [
-    ("aarch64", "aarch64-linux-musl", "qemu-aarch64-static"),
-    ("riscv64", "riscv64-linux-musl", "qemu-riscv64-static"),
-    ("arm32", "arm-linux-musleabihf", "qemu-arm-static"),
+    ("aarch64", "aarch64-linux-musl", ["qemu-aarch64-static", "qemu-aarch64"]),
+    ("riscv64", "riscv64-linux-musl", ["qemu-riscv64-static", "qemu-riscv64"]),
+    ("arm32", "arm-linux-musleabihf", ["qemu-arm-static", "qemu-arm"]),
 ]
+
+
+def find_qemu(candidates: list[str]) -> str | None:
+    for name in candidates:
+        if shutil.which(name):
+            return name
+    return None
 SRC = ["engine/tinyq.c", "engine/crossval.c"]
 BASE = ["-std=c99", "-DTQ_SKIP_ZEROS=0"]
 ARGS = ["artifacts/model.tq8", "artifacts/test_vectors.tqv", "artifacts/reference_out.bin"]
@@ -73,8 +84,9 @@ def main() -> int:
 
     zig_ok = subprocess.run([sys.executable, "-m", "ziglang", "version"],
                             capture_output=True).returncode == 0
-    for arch, triple, qemu in CROSS_TARGETS:
-        if not zig_ok or shutil.which(qemu) is None:
+    for arch, triple, qemu_names in CROSS_TARGETS:
+        qemu = find_qemu(qemu_names)
+        if not zig_ok or qemu is None:
             results.append({"case": f"zig_{arch}_O2",
                             "skipped": "zig cc or qemu-user not installed"})
             continue

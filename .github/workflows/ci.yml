@@ -10,7 +10,11 @@ jobs:
   # Reproduce every number in the README from a clean checkout, then check the
   # README against them. If a claim drifts from its measurement, this job fails.
   reproduce-and-verify:
-    runs-on: ubuntu-latest
+    # Pinned rather than ubuntu-latest: this job reproduces published numbers,
+    # and a runner image changing under it is exactly the kind of silent drift
+    # the claim checking exists to catch. ubuntu-26.04 dropped the
+    # qemu-user-static package, which broke the cross-architecture matrix.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -27,7 +31,10 @@ jobs:
       - name: Install cross-architecture tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-user-static valgrind clang
+          sudo apt-get install -y valgrind clang binutils
+          # Package name differs across releases; the matrix script accepts either.
+          sudo apt-get install -y qemu-user-static || sudo apt-get install -y qemu-user
+          ls -1 /usr/bin/qemu-aarch64* /usr/bin/qemu-riscv64* /usr/bin/qemu-arm* 2>/dev/null
 
       - name: Compiler versions
         run: |
