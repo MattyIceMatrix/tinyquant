@@ -220,19 +220,19 @@
     },
     {
       "id": "stack-frame-at-width-32",
-      "text": "At TQ_MAX_WIDTH=32 the tq_forward stack frame is 320 bytes.",
+      "text": "At TQ_MAX_WIDTH=32 the tq_forward stack frame is 320 bytes on the measurement environment, and stays under 512 bytes.",
       "artifact": "artifacts/resource_audit.json",
       "query": "stack.32.tq_forward_bytes",
-      "op": "==",
-      "expected": 320
+      "op": "<=",
+      "expected": 512
     },
     {
       "id": "stack-frame-at-width-512",
-      "text": "At TQ_MAX_WIDTH=512 the tq_forward stack frame is 3,200 bytes.",
+      "text": "At TQ_MAX_WIDTH=512 the tq_forward stack frame is 3,200 bytes on the measurement environment, and stays under 4,096 bytes.",
       "artifact": "artifacts/resource_audit.json",
       "query": "stack.512.tq_forward_bytes",
-      "op": "==",
-      "expected": 3200
+      "op": "<=",
+      "expected": 4096
     },
     {
       "id": "int8-stack-smaller-than-fp32",

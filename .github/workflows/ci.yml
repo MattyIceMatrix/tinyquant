@@ -54,7 +54,7 @@ jobs:
         run: make sweep
 
       - name: Differential fuzzing
-        run: make fuzz FUZZ_TRIALS=200
+        run: make fuzz
 
       - name: Test suite
         run: make test

@@ -156,7 +156,9 @@ buffers are stack arrays bounded by a compile-time width.
 | 512 | 3,200 B |
 
 That knob is the one a firmware integrator turns, which is why it is measured
-across settings rather than quoted once.
+across settings rather than quoted once. Frame sizes are compiler-dependent, so
+CI asserts bounds on them rather than the exact figures above — the same
+treatment timing claims get, and for the same reason.
 
 ### Every number in this README is a test
 
